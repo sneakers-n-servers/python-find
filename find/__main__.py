@@ -1,34 +1,38 @@
 #!/usr/bin/env python3
 import argparse
-import os
+from os.path import exists
 
 from find.callbacks import print_color, print0
 from find import find
 
 
+def parse_args(arg_parser):
+    args = arg_parser.parse_args()
+    arg_dict = vars(args)
+    arg_dict['callback'] = print_color
+    for predicate in args.predicates:
+        if predicate == '-print0':
+            arg_dict['callback'] = print0
+            break
+        if predicate == '-print':
+            arg_dict['callback'] = print
+            break
+        arg_parser.error("unknown predicate '{}'".format(predicate))
+    return arg_dict
+
+
 def path_exists(path: str) -> str:
-    if not os.path.exists(path):
+    if not exists(path):
         raise argparse.ArgumentTypeError("'{}': No such file or directory".format(path))
     return path
 
 
-def parse_args(arg_parser):
-    args = arg_parser.parse_args()
-    ret = vars(args)
-    ret['callback'] = print_color
-    for predicate in args.predicates:
-        if predicate == '-print0':
-            ret['callback'] = print0
-            break
-        arg_parser.error("unknown predicate '{}'".format(predicate))
-    return ret
-
-
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog='Find',
-        description='This is my description',
-        epilog='Thats how you do'
+        prog='find',
+        description='default path is the current directory; default expression is -print (but with color)',
+        epilog='Predicates available are -print and -print0',
+        usage='find [-H] [-L] [-P] [path...] [predicates]'
     )
     parser.add_argument(
         'path',
@@ -39,18 +43,21 @@ def create_parser() -> argparse.ArgumentParser:
         '-P',
         action='store_false',
         dest='follow_links',
-        default=False
+        default=False,
+        help='Never  follow  symbolic  links.  This is the default behaviour.'
     )
     parser.add_argument(
         '-L',
         action='store_true',
         dest='follow_links',
+        help='Follow symbolic links.'
     )
     parser.add_argument(
         '-H',
         action='store_true',
         dest='arg_links',
-        default=False
+        default=False,
+        help='Do not follow symbolic links, except while processing the command line arguments.'
     )
     parser.add_argument(
         'predicates',
@@ -62,9 +69,9 @@ def create_parser() -> argparse.ArgumentParser:
 def main():
     arg_parser = create_parser()
     arg_dict = parse_args(arg_parser)
-    ret = find(arg_dict['path'], **arg_dict)
-    exit(ret)
+    return find(arg_dict['path'], **arg_dict)
 
 
 if __name__ == '__main__':
-    main()
+    ret = main()
+    exit(ret)

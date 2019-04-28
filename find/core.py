@@ -5,6 +5,13 @@ from os import scandir
 
 
 def find(paths: Union[List[str], str] = None, **kwargs) -> int:
+    """
+    Recurse all directories passed in as paths, defaults to current dir.
+    Options to be added to kwargs as needed.
+    :param paths: A list of paths to recurse
+    :param kwargs: A dictionary of options
+    :return: The exit value
+    """
     if not paths:
         paths = ['.']
     if isinstance(paths, str):
@@ -17,6 +24,8 @@ def find(paths: Union[List[str], str] = None, **kwargs) -> int:
     for path in paths:
         if islink(path) and not arg_links:
             callback(path)
+            if follow_links:
+                _walk(path, follow_links, callback)
         elif isfile(path):
             callback(path)
         else:
